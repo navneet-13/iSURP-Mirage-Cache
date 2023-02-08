@@ -35,11 +35,18 @@ unsigned int myseed = 1;
 #endif
 #define NUM_SKEWS                 (2)
 
-//16MB LLC
-#define CACHE_SZ_BYTES            (12*1024*1024) 
+//16MB LLC TAG ARRAY
+#define CACHE_SZ_BYTES            (16*1024*1024) 
 #define LINE_SZ_BYTES             (64)
 #define NUM_BUCKETS               ((CACHE_SZ_BYTES/LINE_SZ_BYTES)/(BASE_WAYS_PER_SKEW))
 #define NUM_BUCKETS_PER_SKEW      (NUM_BUCKETS/NUM_SKEWS)
+
+//8MB LLC DATA ARRAY
+#ifndef CUSTOM_DATA_SZ
+#define DATA_SZ                   (262144/2)
+#else
+#define DATA_SZ                   (CUSTOM_DATA_SZ)
+#endif //
 
 //Bucket Capacities
 #define BALLS_PER_BUCKET      (BASE_WAYS_PER_SKEW)
@@ -51,10 +58,10 @@ unsigned int myseed = 1;
 int SPILL_THRESHOLD = BALLS_PER_BUCKET + EXTRA_BUCKET_CAPACITY;
 
 //NAV: Number of ball ids that will be used to randomly generate a ball to be thrown
-#ifndef  num_ball_id
-#define total_ball_id (4*262144)
+#ifndef NUM_BALL_ID
+#define TOTAL_BALL_ID         (4*262144)
 #else
-#define total_ball_id (num_ball_id)
+#define TOTAL_BALL_ID         (NUM_BALL_ID)
 #endif
 
 // Tie-Breaking Policy between Skews on Ball-Throws
@@ -96,7 +103,7 @@ uns64 stat_counts[MAX_FILL+1];
 uns64 spill_count = 0;
 
 //Number of Spills despite relocation attempts.
-//uns64 cuckoo_spill_count = 0;
+uns64 cuckoo_spill_count = 0;
 
 //Tracks if Initialization of Buckets Done
 bool init_buckets_done = false;
@@ -105,26 +112,56 @@ bool init_buckets_done = false;
 MTRand *mtrand=new MTRand();
 
 /////////////////////////////////////////////////////
-// FUNCTIONS - Ball Insertion, Removal, Spill, etc.
+// FUNCTIONS - Spill, Ball Insertion, Removal etc.
 /////////////////////////////////////////////////////
 
+/////////////////////////////////////////////////////
+// Spill Ball: relocating filled bucket
+// -- Based on which skew spill happened;
+// -- cuckoo into other recursively.
+/////////////////////////////////////////////////////
 
-void tag_hit(uns64 ballID){
-  uns64 set;
-  uns64 priority;
-  set = get<0>(set_map.at(ballID));
-  priority = get<1>(set_map.at(ballID));
+void spill_ball(uns64 index, uns64 ballID){
+  uns done=0;
 
-  assert(priority != -1);
+  bucket[index]--;
 
-  if (priority == 0){
-    // AB: changing the priority for the entry to 1
-    set_map[ballID] = make_tuple(set, 1);
-    remove_ball();
-  }  
-  else {
-      // AB: might need to increment access counter
+  while(done!=1){
+    //Pick skew & bucket-index where spilled ball should be placed.
+    uns64 spill_index ;
+    //If current index is in Skew0, then pick Skew1. Else vice-versa.
+    if(index < NUM_BUCKETS_PER_SKEW)
+      spill_index = NUM_BUCKETS_PER_SKEW + mtrand->randInt(NUM_BUCKETS_PER_SKEW-1);
+    else
+      spill_index = mtrand->randInt(NUM_BUCKETS_PER_SKEW-1);
+
+    vector<int>realloc_list;
+    for (auto i = set_map.begin(); i != set_map.end(); i++) {
+      if (get<0>(i->second) == index && (i->first) != ballID) {
+        realloc_list.push_back(i->first);
+      }
+    }
+    uns64 randomID = realloc_list[mtrand->randInt(realloc_list.size() - 1)];
+    uns64 priority = get<1>(set_map[randomID]);  //.at changed
+    set_map[randomID] = make_tuple(spill_index, priority);
+
+    //If new spill_index bucket where spilled-ball is to be installed has space, then done.
+    if(bucket[spill_index] < SPILL_THRESHOLD){
+      done=1;
+      bucket[spill_index]++;
+      //balls[ballID] = spill_index;
+      
+    } 
+    else {
+      assert(bucket[spill_index] == SPILL_THRESHOLD);
+      //if bucket of spill_index is also full, then recursive-spill, we call this a cuckoo-spill
+      index = spill_index;
+      ballID = randomID;
+      cuckoo_spill_count++;
+    }
   }
+
+  spill_count++;
 }
 
 /////////////////////////////////////////////////////
@@ -198,7 +235,9 @@ void remove_ball(){
   // AB: creating a vector containing ballIDs stored in the Data Array
   vector<int>keys_list;
   for (auto i = set_map.begin(); i != set_map.end(); i++) {
-    keys_list.push_back(i->first);
+    if (get<1>(i->second) == 1) {
+      keys_list.push_back(i->first);
+    }
   }
 
   // AB: random eviction from data array
@@ -208,61 +247,54 @@ void remove_ball(){
   set_map.erase(randomID);
 
   // AB: decrementing valid entries for set corresponding to randomID
-  bucket[get<0>(set_map.at(randomID))]--;
-  assert(bucket[randomID] != 0 ); 
+  assert(bucket[get<0>(set_map[randomID])] != 0 ); 
+  bucket[get<0>(set_map[randomID])]--;
+}
+
+void tag_hit(uns64 ballID){
+  uns64 set;
+  uns64 priority;
+  set = get<0>(set_map[ballID]);
+  priority = get<1>(set_map[ballID]);
+
+  assert(priority != -1);
+
+  if (priority == 0){
+    // AB: changing the priority for the entry to 1
+    set_map[ballID] = make_tuple(set, 1);
+    remove_ball();
+  }  
+  else {
+      // AB: might need to increment access counter
+  }
 }
 
 uns tag_miss(uns64 ballID){
-  insert_ball(ballID);
+  uns retval = insert_ball(ballID);
+  printf("Remove ball called \n");
   remove_ball();
-}
-
-/////////////////////////////////////////////////////
-// Spill Ball: relocating filled bucket
-// -- Based on which skew spill happened;
-// -- cuckoo into other recursively.
-/////////////////////////////////////////////////////
-
-void spill_ball(uns64 index, uns64 ballID){
-  uns done=0;
-
-  bucket[index]--;
-
-  while(done!=1){
-    //Pick skew & bucket-index where spilled ball should be placed.
-    uns64 spill_index ;
-    //If current index is in Skew0, then pick Skew1. Else vice-versa.
-    if(index < NUM_BUCKETS_PER_SKEW)
-      spill_index = NUM_BUCKETS_PER_SKEW + mtrand->randInt(NUM_BUCKETS_PER_SKEW-1);
-    else
-      spill_index = mtrand->randInt(NUM_BUCKETS_PER_SKEW-1);
-
-    //If new spill_index bucket where spilled-ball is to be installed has space, then done.
-    if(bucket[spill_index] < SPILL_THRESHOLD){
-      done=1;
-      bucket[spill_index]++;
-      balls[ballID] = spill_index;
-     
-    } else {
-      assert(bucket[spill_index] == SPILL_THRESHOLD);
-      //if bucket of spill_index is also full, then recursive-spill, we call this a cuckoo-spill
-      index = spill_index;
-      cuckoo_spill_count++;
-    }
-  }
-
-  spill_count++;
+  return retval;
 }
 
 void throw_ball(){
-  uns64 randID = mtrand->randInt(total_ball_id - 1);
+  uns64 randID = mtrand->randInt(TOTAL_BALL_ID - 1);
 
   if (set_map.find(randID) != set_map.end()){
     tag_hit(randID);
   }
   else{
-    tag_miss(randID);
+    printf("Tag miss occured \n");
+    uns res = tag_miss(randID);
+    if(res <= MAX_FILL){
+      stat_counts[res]++;
+    }else{
+      printf("Overflow\n");
+      exit(-1);
+    }
   }
+
+  //printf("Res: %u\n", res);
+  //return res;
 }
 
 // uns64 remove_ball(void){
@@ -298,6 +330,7 @@ void display_histogram(void){
   }
 
   //  printf("\n");
+  // AB: keeps a track of percentage of buckets having ii number of balls
   printf("\nOccupancy: \t\t Count");
   for(ii=0; ii<= MAX_FILL; ii++){
     double perc = 100.0 * (double)s_count[ii]/(double)(NUM_BUCKETS);
@@ -311,21 +344,27 @@ void display_histogram(void){
 /////////////////////////////////////////////////////
 
 void sanity_check(void){
-  uns ii, count=0;
-  uns s_count[MAX_FILL+1];
+  uns count=0;
+  // uns s_count[MAX_FILL+1];
 
-  for(ii=0; ii<= MAX_FILL; ii++){
-    s_count[ii]=0;
-  }
+  // for(ii=0; ii<= MAX_FILL; ii++){
+  //   s_count[ii]=0;
+  // }
   
-  for(ii=0; ii< NUM_BUCKETS; ii++){
-    count += bucket[ii];
-    s_count[bucket[ii]]++;
+  // for(uns ii=0; ii< NUM_BUCKETS; ii++){
+  //   count += bucket[ii];
+  //   //s_count[bucket[ii]]++;
+  // }
+  
+  for (auto i = set_map.begin(); i != set_map.end(); i++) {
+    if (get<1>(i->second) == 1) {
+      count++;
+    }
   }
 
-
-  if(count != (NUM_BUCKETS*BALLS_PER_BUCKET)){
-    printf("\n*** Sanity Check Failed, TotalCount: %u*****\n", count);
+  // AB: number of entries in the Data Array exceeds the capacity
+  if(count != (DATA_SZ)){
+    printf("\n*** Sanity Check Failed, TotalCount : %u*****\n", count);
   }
 }
 
@@ -338,14 +377,19 @@ void init(void){
 
   assert(NUM_SKEWS * NUM_BUCKETS_PER_SKEW == NUM_BUCKETS);
   
+  // AB: initialize all buckets to have all invalid tags
   for(ii=0; ii<NUM_BUCKETS; ii++){
     bucket[ii]=0;
   }
  
-  for(ii=0; ii<(total_ball_id); ii+=8){
+  for(ii=0; ii<(TOTAL_BALL_ID); ii+= int((TOTAL_BALL_ID/DATA_SZ))){
     //balls[ii] = -1;
-    insert_ball(ii);
-    tag_hit(ii);
+    // AB: insert incoming ball into the set_map without evicting random line
+    insert_ball(ii);           
+    // AB: modify the priority of this ball to 1 (with data)
+    uns64 set = get<0>(set_map[ii]);
+    set_map[ii] = make_tuple(set, 1);
+    // AB: insert a different ball into the tag store with priority 0
     insert_ball(ii+4);
   }
 
@@ -355,6 +399,7 @@ void init(void){
 
   sanity_check();
   init_buckets_done = true;
+  printf("Init Done \n");
 }
 
 /////////////////////////////////////////////////////
@@ -362,23 +407,23 @@ void init(void){
 // then insert a new ball with Power-of-Choices Install
 /////////////////////////////////////////////////////
 
-uns  remove_and_insert(void){
+// uns  remove_and_insert(void){
   
-  uns res = 0;
+//   uns res = 0;
 
-  uns64 ballID = remove_ball();
-  res = insert_ball(ballID);
+//   uns64 ballID = remove_ball();
+//   res = insert_ball(ballID);
 
-  if(res <= MAX_FILL){
-    stat_counts[res]++;
-  }else{
-    printf("Overflow\n");
-    exit(-1);
-  }
+//   if(res <= MAX_FILL){
+//     stat_counts[res]++;
+//   }else{
+//     printf("Overflow\n");
+//     exit(-1);
+//   }
 
-  //printf("Res: %u\n", res);
-  return res;
-}
+//   //printf("Res: %u\n", res);
+//   return res;
+// }
 
 
 
@@ -402,10 +447,11 @@ int main(int argc, char* argv[]){
   mtrand->seed(myseed);
 
   //Initialize Buckets
+  printf("Initializing..... \n");
   init();
 
   //Ensure Total Balls in Buckets is Conserved.
-  sanity_check();
+  sanity_check(); // AB: redundant
 
   printf("Starting --  (Dot printed every 100M Ball throws) \n");
 
@@ -416,7 +462,7 @@ int main(int argc, char* argv[]){
       //In multiples of 100 Million Ball Throws.
       for(ii=0; ii<HUNDRED_MILLION_TRIES; ii++){
         //Insert and Remove Ball
-        remove_and_insert();      
+        throw_ball();
       }
       printf(".");fflush(stdout);
     }    
