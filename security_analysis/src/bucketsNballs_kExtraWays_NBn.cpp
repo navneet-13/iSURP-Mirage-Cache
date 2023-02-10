@@ -233,7 +233,7 @@ uns insert_ball(uns64 ballID){
 /////////////////////////////////////////////////////
 void remove_ball(){
   // AB: creating a vector containing ballIDs stored in the Data Array
-  vector<int>keys_list;
+  vector<uns64>keys_list;
   for (auto i = set_map.begin(); i != set_map.end(); i++) {
     if (get<1>(i->second) == 1) {
       keys_list.push_back(i->first);
@@ -243,12 +243,12 @@ void remove_ball(){
   // AB: random eviction from data array
   uns64 randomID = keys_list[mtrand->randInt(keys_list.size() - 1)];
   
-  // AB: removing the randomID entry from the data array
-  set_map.erase(randomID);
-
   // AB: decrementing valid entries for set corresponding to randomID
   assert(bucket[get<0>(set_map[randomID])] != 0 ); 
   bucket[get<0>(set_map[randomID])]--;
+  
+  // AB: removing the randomID entry from the data array
+  set_map.erase(randomID);
 }
 
 void tag_hit(uns64 ballID){
@@ -262,6 +262,7 @@ void tag_hit(uns64 ballID){
   if (priority == 0){
     // AB: changing the priority for the entry to 1
     set_map[ballID] = make_tuple(set, 1);
+    //printf("Remove ball called in tag hit \n");
     remove_ball();
   }  
   else {
@@ -271,19 +272,21 @@ void tag_hit(uns64 ballID){
 
 uns tag_miss(uns64 ballID){
   uns retval = insert_ball(ballID);
-  printf("Remove ball called \n");
+  //printf("Remove ball called \n");
   remove_ball();
   return retval;
 }
 
 void throw_ball(){
   uns64 randID = mtrand->randInt(TOTAL_BALL_ID - 1);
+  //printf("\nBall ID: %d \n", randID);
 
   if (set_map.find(randID) != set_map.end()){
+    //printf("Tag hit occured \n");
     tag_hit(randID);
   }
   else{
-    printf("Tag miss occured \n");
+    //printf("Tag miss occured \n");
     uns res = tag_miss(randID);
     if(res <= MAX_FILL){
       stat_counts[res]++;
@@ -399,7 +402,7 @@ void init(void){
 
   sanity_check();
   init_buckets_done = true;
-  printf("Init Done \n");
+  printf("Init Done excp 1\n");
 }
 
 /////////////////////////////////////////////////////
@@ -452,6 +455,7 @@ int main(int argc, char* argv[]){
 
   //Ensure Total Balls in Buckets is Conserved.
   sanity_check(); // AB: redundant
+  printf("Sanity Check Successful \n");
 
   printf("Starting --  (Dot printed every 100M Ball throws) \n");
 
@@ -463,6 +467,8 @@ int main(int argc, char* argv[]){
       for(ii=0; ii<HUNDRED_MILLION_TRIES; ii++){
         //Insert and Remove Ball
         throw_ball();
+        printf("%d ", ii);
+
       }
       printf(".");fflush(stdout);
     }    

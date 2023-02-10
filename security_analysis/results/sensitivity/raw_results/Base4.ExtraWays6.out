@@ -1,0 +1,75 @@
+Cache Configuration: 16 MB, 2 skews, 8 ways (4 ways/skew)
+AVG-BALLS-PER-BUCKET:4, BUCKET-SPILL-THRESHOLD:10 
+Simulation Parameters - BALL_THROWS:1000000000, SEED:42
+
+Starting --  (Dot printed every 100M Ball throws) 
+.......... 1Bn
+
+
+Bucket-Occupancy Snapshot at End of Experiment
+
+Occupancy: 		 Count
+Bucket[ 0 Fill]: 	 158 	 (0.24)
+Bucket[ 1 Fill]: 	 1358 	 (2.07)
+Bucket[ 2 Fill]: 	 5500 	 (8.39)
+Bucket[ 3 Fill]: 	 13541 	 (20.66)
+Bucket[ 4 Fill]: 	 21624 	 (33.00)
+Bucket[ 5 Fill]: 	 17728 	 (27.05)
+Bucket[ 6 Fill]: 	 5362 	 (8.18)
+Bucket[ 7 Fill]: 	 265 	 (0.40)
+Bucket[ 8 Fill]: 	 0 	 (0.00)
+Bucket[ 9 Fill]: 	 0 	 (0.00)
+Bucket[10 Fill]: 	 0 	 (0.00)
+Bucket[11 Fill]: 	 0 	 (0.00)
+Bucket[12 Fill]: 	 0 	 (0.00)
+Bucket[13 Fill]: 	 0 	 (0.00)
+Bucket[14 Fill]: 	 0 	 (0.00)
+Bucket[15 Fill]: 	 0 	 (0.00)
+Bucket[16 Fill]: 	 0 	 (0.00)
+
+
+Distribution of Bucket-Occupancy (Averaged across Ball Throws) => Used for P(Bucket = k balls) calculation 
+
+Occupancy: 		            Count 	 P(Bucket=k balls)
+Bucket[ 0 Fill]: 	          5277561 	 (0.264)
+Bucket[ 1 Fill]: 	         42147819 	 (2.107)
+Bucket[ 2 Fill]: 	        166351464 	 (8.318)
+Bucket[ 3 Fill]: 	        414695965 	 (20.735)
+Bucket[ 4 Fill]: 	        654755039 	 (32.738)
+Bucket[ 5 Fill]: 	        546914465 	 (27.346)
+Bucket[ 6 Fill]: 	        161614879 	 (8.081)
+Bucket[ 7 Fill]: 	          8225369 	 (0.411)
+Bucket[ 8 Fill]: 	            17439 	 (0.001)
+Bucket[ 9 Fill]: 	                0 	 (0.000)
+Bucket[10 Fill]: 	                0 	 (0.000)
+Bucket[11 Fill]: 	                0 	 (0.000)
+Bucket[12 Fill]: 	                0 	 (0.000)
+Bucket[13 Fill]: 	                0 	 (0.000)
+Bucket[14 Fill]: 	                0 	 (0.000)
+Bucket[15 Fill]: 	                0 	 (0.000)
+Bucket[16 Fill]: 	                0 	 (0.000)
+
+
+Distribution of Balls-in-Dest-Bucket on Ball-Insertion (Best-Of-2 Indexed-Buckets) => Spill-Count = Spills from Bucket-With-10-Balls
+
+Balls-in-Dest-Bucket (k) 		 Spills from Bucket-With-k-Balls)
+ 0:				          5270602	 (0.527)
+ 1:				         41592357	 (4.159)
+ 2:				        155489512	 (15.549)
+ 3:				        327382772	 (32.738)
+ 4:				        341828093	 (34.183)
+ 5:				        121220062	 (12.122)
+ 6:				          7199602	 (0.720)
+ 7:				            17000	 (0.002)
+ 8:				                0	 (0.000)
+ 9:				                0	 (0.000)
+10:				                0	 (0.000)
+11:				                0	 (0.000)
+12:				                0	 (0.000)
+13:				                0	 (0.000)
+14:				                0	 (0.000)
+15:				                0	 (0.000)
+
+Spill Count: 0 (0.000)
+
+Cuckoo Spill Count: 0 (0.000)
