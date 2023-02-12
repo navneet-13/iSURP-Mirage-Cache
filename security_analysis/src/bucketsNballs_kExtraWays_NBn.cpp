@@ -218,6 +218,7 @@ uns64 insert_ball(uns64 ballID){
   // AB: add the new ball to the hash function
   set_map[ballID] = make_tuple(index, 0);
   
+  
   //----------- SPILL --------
   if(SPILL_THRESHOLD && (retval >= SPILL_THRESHOLD)){
     //Overwrite balls[ballID] with spill_index.
@@ -235,29 +236,35 @@ uns64 insert_ball(uns64 ballID){
 /////////////////////////////////////////////////////
 void remove_ball(){
   // AB: creating a vector containing ballIDs stored in the Data Array
-  vector<uns64>keys_list;
-  for (auto i = set_map.begin(); i != set_map.end(); i++) {
-    if (get<1>(i->second) == 1) {
-      keys_list.push_back(i->first);
-    }
-  }
-  printf("Generated keys_list \n");
+  // vector<uns64>keys_list;
+  // for (auto i = set_map.begin(); i != set_map.end(); i++) {
+  //   if (get<1>(i->second) == 1) {
+  //     keys_list.push_back(i->first);
+  //   }
+  // }
+
+  //printf("Generated keys_list \n");
   // AB: random eviction from data array
   
-  assert(keys_list.size() != 0);
-  uns64 randomID = keys_list[mtrand->randInt(keys_list.size() - 1)];
-  printf("Random ID generated \n");
+  // assert(keys_list.size() != 0);
+  auto it = cat_1_map.begin();
+  std::advance(it, rand() % cat_1_map.size());
+  uns64 randomID = it-> first;
+
+  //printf("Random ID generated \n");
   assert(set_map.find(randomID) != set_map.end());
+  
   // AB: decrementing valid entries for set corresponding to randomID
   uns64 index = get<0>(set_map[randomID]);
-  printf("Index is %lld \n", index);
+  //printf("Index is %lld \n", index);
+  
   assert(bucket[index] != 0 ); 
   bucket[index]--;
   
   // AB: removing the randomID entry from the data array
   printf("Erasing the random ID: %lld \n", randomID);
   set_map.erase(randomID);
-  //cat_1_map.erase(randomID);
+  cat_1_map.erase(randomID);
 }
 
 void tag_hit(uns64 ballID){
@@ -272,6 +279,7 @@ void tag_hit(uns64 ballID){
   if (priority == 0){
     // AB: changing the priority for the entry to 1
     set_map[ballID] = make_tuple(set, 1);
+    cat_1_map[ballID] = 1;
     //printf("Remove ball called in tag hit \n");
     remove_ball();
   }  
@@ -371,15 +379,19 @@ void sanity_check(void){
   //   //s_count[bucket[ii]]++;
   // }
   
-  for (auto i = set_map.begin(); i != set_map.end(); i++) {
-    if (get<1>(i->second) == 1) {
-      count++;
-    }
-  }
+  // for (auto i = set_map.begin(); i != set_map.end(); i++) {
+  //   if (get<1>(i->second) == 1) {
+  //     count++;
+  //   }
+  // }
 
   // AB: number of entries in the Data Array exceeds the capacity
-  if(count != (DATA_SZ)){
-    printf("\n*** Sanity Check Failed, TotalCount : %u*****\n", count);
+  // if(count != (DATA_SZ)){
+  //   printf("\n*** Sanity Check Failed, TotalCount : %u*****\n", count);
+  // }
+
+  if(cat_1_map.size() != (DATA_SZ)){
+     printf("\n*** Sanity Check Failed, TotalCount : %u*****\n", count);
   }
 }
 
