@@ -85,6 +85,7 @@ typedef double dbl;
 
 // NAV: Create a hash table to store the set and priority of ball_ids
 unordered_map<uns64, tuple<uns64, uns64>> set_map;
+unordered_map<uns64, uns64> cat_1_map;
 
 //For each Bucket (Set), number of Valid Balls in Bucket
 uns64 bucket[NUM_BUCKETS];
@@ -220,6 +221,7 @@ uns64 insert_ball(uns64 ballID){
   //----------- SPILL --------
   if(SPILL_THRESHOLD && (retval >= SPILL_THRESHOLD)){
     //Overwrite balls[ballID] with spill_index.
+    printf("Spill has occurred for Ball ID %llu", ballID);
     spill_ball(index,ballID);   
   }
 
@@ -239,16 +241,23 @@ void remove_ball(){
       keys_list.push_back(i->first);
     }
   }
-
+  printf("Generated keys_list \n");
   // AB: random eviction from data array
-  uns64 randomID = keys_list[mtrand->randInt(keys_list.size() - 1)];
   
+  assert(keys_list.size() != 0);
+  uns64 randomID = keys_list[mtrand->randInt(keys_list.size() - 1)];
+  printf("Random ID generated \n");
+  assert(set_map.find(randomID) != set_map.end());
   // AB: decrementing valid entries for set corresponding to randomID
-  assert(bucket[get<0>(set_map[randomID])] != 0 ); 
-  bucket[get<0>(set_map[randomID])]--;
+  uns64 index = get<0>(set_map[randomID]);
+  printf("Index is %lld \n", index);
+  assert(bucket[index] != 0 ); 
+  bucket[index]--;
   
   // AB: removing the randomID entry from the data array
+  printf("Erasing the random ID: %lld \n", randomID);
   set_map.erase(randomID);
+  //cat_1_map.erase(randomID);
 }
 
 void tag_hit(uns64 ballID){
@@ -275,20 +284,21 @@ uns64 tag_miss(uns64 ballID){
   assert(set_map.find(ballID) == set_map.end());
   uns64 retval = insert_ball(ballID);
   //printf("Remove ball called \n");
-  remove_ball();
+  //remove_ball();
+  //printf("Returning retval = %lld \n", retval);
   return retval;
 }
 
 void throw_ball(){
   uns64 randID = mtrand->randInt(TOTAL_BALL_ID - 1);
-  //printf("\nBall ID: %d \n", randID);
+  printf("\nBall ID: %lld \n", randID);
 
   if (set_map.find(randID) != set_map.end()){
-    //printf("Tag hit occured \n");
+    printf("Tag hit occured \n");
     tag_hit(randID);
   }
   else{
-    //printf("Tag miss occured \n");
+    printf("Tag miss occured \n");
     uns64 res = tag_miss(randID);
     if(res <= MAX_FILL){
       stat_counts[res]++;
@@ -484,8 +494,8 @@ int main(int argc, char* argv[]){
   
   for (uns64 i = 0; i < 1000; i++){
     for (uns64 ii = 0; ii < 1000; ii++) {
-      throw_ball();
       printf("%lld%lld \n", i, ii);
+      throw_ball();
     }
   }
 
