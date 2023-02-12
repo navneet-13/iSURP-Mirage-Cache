@@ -415,9 +415,11 @@ void init(void){
     uns64 ball1 = insert_ball(ii);           
     // AB: modify the priority of this ball to 1 (with data)
     uns64 set = get<0>(set_map[ii]);
+    cat_1_map[ii] = 1;
     set_map[ii] = make_tuple(set, 1);
+
     // AB: insert a different ball into the tag store with priority 0
-    uns64 ball2 = insert_ball(ii+4);
+    //uns64 ball2 = insert_ball(ii+4);
   }
 
   for(ii=0; ii<=MAX_FILL; ii++){
@@ -504,7 +506,7 @@ int main(int argc, char* argv[]){
   }
   */
   
-  for (uns64 i = 0; i < 1000; i++){
+  for (uns64 i = 0; i < 500; i++){
     for (uns64 ii = 0; ii < 1000; ii++) {
       printf("%lld%lld \n", i, ii);
       throw_ball();
