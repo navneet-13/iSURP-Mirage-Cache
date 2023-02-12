@@ -167,7 +167,7 @@ void spill_ball(uns64 index, uns64 ballID){
 /////////////////////////////////////////////////////
 // Insert Ball in Bucket
 /////////////////////////////////////////////////////
-uns insert_ball(uns64 ballID){
+uns64 insert_ball(uns64 ballID){
     //Index for Rand Bucket in Skew-0
   uns64 index1 = mtrand->randInt(NUM_BUCKETS_PER_SKEW - 1);
   //Index for Rand Bucket in Skew-1
@@ -180,7 +180,7 @@ uns insert_ball(uns64 ballID){
   }
     
   uns64 index;
-  uns retval;
+  uns64 retval;
 
   //------ LOAD AWARE SKEW SELECTION -----
   //Identify which Bucket (index) has Less Load
@@ -252,6 +252,7 @@ void remove_ball(){
 }
 
 void tag_hit(uns64 ballID){
+  assert(set_map.find(ballID) != set_map.end());
   uns64 set;
   uns64 priority;
   set = get<0>(set_map[ballID]);
@@ -270,8 +271,9 @@ void tag_hit(uns64 ballID){
   }
 }
 
-uns tag_miss(uns64 ballID){
-  uns retval = insert_ball(ballID);
+uns64 tag_miss(uns64 ballID){
+  assert(set_map.find(ballID) == set_map.end());
+  uns64 retval = insert_ball(ballID);
   //printf("Remove ball called \n");
   remove_ball();
   return retval;
@@ -287,7 +289,7 @@ void throw_ball(){
   }
   else{
     //printf("Tag miss occured \n");
-    uns res = tag_miss(randID);
+    uns64 res = tag_miss(randID);
     if(res <= MAX_FILL){
       stat_counts[res]++;
     }else{
@@ -320,7 +322,7 @@ void throw_ball(){
 /////////////////////////////////////////////////////
 /////////////////////////////////////////////////////
 
-void display_histogram(void){
+void display_histogram(){
   uns ii;
   uns s_count[MAX_FILL+1];
 
@@ -385,15 +387,15 @@ void init(void){
     bucket[ii]=0;
   }
  
-  for(ii=0; ii<(TOTAL_BALL_ID); ii+= int((TOTAL_BALL_ID/DATA_SZ))){
+  for(ii=0; ii<(TOTAL_BALL_ID); ii+= uns64((TOTAL_BALL_ID/DATA_SZ))){
     //balls[ii] = -1;
     // AB: insert incoming ball into the set_map without evicting random line
-    insert_ball(ii);           
+    uns64 ball1 = insert_ball(ii);           
     // AB: modify the priority of this ball to 1 (with data)
     uns64 set = get<0>(set_map[ii]);
     set_map[ii] = make_tuple(set, 1);
     // AB: insert a different ball into the tag store with priority 0
-    insert_ball(ii+4);
+    uns64 ball2 = insert_ball(ii+4);
   }
 
   for(ii=0; ii<=MAX_FILL; ii++){
@@ -402,7 +404,7 @@ void init(void){
 
   sanity_check();
   init_buckets_done = true;
-  printf("Init Done excp 1\n");
+  printf("Init Done\n");
 }
 
 /////////////////////////////////////////////////////
@@ -460,6 +462,7 @@ int main(int argc, char* argv[]){
   printf("Starting --  (Dot printed every 100M Ball throws) \n");
 
   //N Billion Ball Throws
+  /*
   for (uns64 bn_i=0 ; bn_i < NUM_BILLION_TRIES; bn_i++) {    
     //1 Billion Ball Throws
     for(uns64 hundred_mn_count=0; hundred_mn_count<10; hundred_mn_count++){
@@ -467,7 +470,7 @@ int main(int argc, char* argv[]){
       for(ii=0; ii<HUNDRED_MILLION_TRIES; ii++){
         //Insert and Remove Ball
         throw_ball();
-        printf("%d ", ii);
+        //printf("%d ", ii);
 
       }
       printf(".");fflush(stdout);
@@ -476,6 +479,14 @@ int main(int argc, char* argv[]){
     sanity_check();
     //Print count of Balls Thrown.
     printf(" %dBn\n",bn_i+1);fflush(stdout);    
+  }
+  */
+  
+  for (uns64 i = 0; i < 1000; i++){
+    for (uns64 ii = 0; ii < 1000; ii++) {
+      throw_ball();
+    }
+    printf("%lld \n", i);
   }
 
   printf("\n\nBucket-Occupancy Snapshot at End of Experiment\n");
@@ -486,7 +497,7 @@ int main(int argc, char* argv[]){
   printf("\nOccupancy: \t\t %16s \t P(Bucket=k balls)","Count");
   for(ii=0; ii<= MAX_FILL; ii++){
     double perc = 100.0 * (double)bucket_fill_observed[ii]/(NUM_SKEWS*(double)NUM_BILLION_TRIES*(double)BILLION_TRIES);
-    printf("\nBucket[%2u Fill]: \t %16llu \t (%5.3f)", ii, bucket_fill_observed[ii], perc);
+    printf("\nBucket[%2llu Fill]: \t %16llu \t (%5.3f)", ii, bucket_fill_observed[ii], perc);
   }
 
   printf("\n\n\n");

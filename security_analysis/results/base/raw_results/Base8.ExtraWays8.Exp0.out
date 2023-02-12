@@ -1,0 +1,8 @@
+Cache Configuration: 16 MB, 2 skews, 16 ways (8 ways/skew)
+AVG-BALLS-PER-BUCKET:8, BUCKET-SPILL-THRESHOLD:16 
+Simulation Parameters - BALL_THROWS:1000000000, SEED:0
+
+Initializing..... 
+Init Done
+Sanity Check Successful 
+Starting --  (Dot printed every 100M Ball throws) 

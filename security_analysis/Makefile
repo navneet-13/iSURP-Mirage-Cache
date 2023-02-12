@@ -1,8 +1,9 @@
-all: base_design sensitivity
+all: base_design 
+#sensitivity
 
 base_design : create_folder WaysPerSkew_8
 
-sensitivity : create_folder WaysPerSkew_16 WaysPerSkew_4
+#sensitivity : create_folder WaysPerSkew_16 WaysPerSkew_4
 
 #-------------------------
 # DEFINES

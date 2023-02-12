@@ -10,7 +10,7 @@ mkdir -p raw_results;
 rm -rf raw_results/*;
 
 ## Run Empirical Results for Extra-Ways = 1,2,3,4,5,6
-for extra_ways_per_skew in 1
+for extra_ways_per_skew in 8
 do
     ## Run $NUM_EXP experiments
     for (( i=0; i<$NUM_EXP; i++ ))
