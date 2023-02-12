@@ -485,8 +485,8 @@ int main(int argc, char* argv[]){
   for (uns64 i = 0; i < 1000; i++){
     for (uns64 ii = 0; ii < 1000; ii++) {
       throw_ball();
+      printf("%lld%lld \n", i, ii);
     }
-    printf("%lld \n", i);
   }
 
   printf("\n\nBucket-Occupancy Snapshot at End of Experiment\n");
