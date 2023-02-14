@@ -572,7 +572,7 @@ int main(int argc, char* argv[]){
   */
   
   for (uns64 i = 0; i < 1000; i++){
-    for (uns64 ii = 0; ii < 1000; ii++) {
+    for (uns64 ii = 0; ii < 10000; ii++) {
       printf("%lld%lld \n", i, ii);
       throw_ball();
     }
@@ -603,21 +603,10 @@ int main(int argc, char* argv[]){
          100.0* (double)spill_count/(double)((double)NUM_BILLION_TRIES*(double)BILLION_TRIES));
   printf("\nCuckoo Spill Count: %llu (%5.3f)\n", cuckoo_spill_count,
          100.0* (double)cuckoo_spill_count/(double)((double)NUM_BILLION_TRIES*(double)BILLION_TRIES));
-
-  uns64 priority0 = 0;
-  uns64 priority1 = 0;
-  for (auto i = set_map.begin(); i != set_map.end(); i++) {
-    if (get<1>(i->second) == 1) {
-      priority1++;
-    }
-    else {
-      priority0++;
-    }
-  }
   
   //AB: printing the total number of priority 0 and priority 1 entries
-  printf("\nPriority 0 entries: %lld", priority0);
-  printf("\nPriority 1 entries: %lld", priority1);
+  printf("\nPriority 0 entries: %ld", cat_0_map.size());
+  printf("\nPriority 1 entries: %ld", cat_1_map.size());
   
   //AB: time for running the program
   time(&end);
