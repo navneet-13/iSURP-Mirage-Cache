@@ -8,7 +8,7 @@
 #include <vector>
 #include <unordered_map>
 #include "mtrand.h"
-
+#include <ctime>
 using namespace std;
 
 /////////////////////////////////////////////////////
@@ -85,7 +85,9 @@ typedef double dbl;
 
 // NAV: Create a hash table to store the set and priority of ball_ids
 unordered_map<uns64, tuple<uns64, uns64>> set_map;
+unordered_map<uns64, uns64> cat_0_map;
 unordered_map<uns64, uns64> cat_1_map;
+vector <uns64>bucket_data[NUM_BUCKETS];
 
 //For each Bucket (Set), number of Valid Balls in Bucket
 uns64 bucket[NUM_BUCKETS];
@@ -136,15 +138,23 @@ void spill_ball(uns64 index, uns64 ballID){
     else
       spill_index = mtrand->randInt(NUM_BUCKETS_PER_SKEW-1);
 
-    vector<int>realloc_list;
-    for (auto i = set_map.begin(); i != set_map.end(); i++) {
-      if (get<0>(i->second) == index && (i->first) != ballID) {
-        realloc_list.push_back(i->first);
-      }
-    }
-    uns64 randomID = realloc_list[mtrand->randInt(realloc_list.size() - 1)];
+    // vector<int>realloc_list;
+    // for (auto i = set_map.begin(); i != set_map.end(); i++) {
+    //   if (get<0>(i->second) == index && (i->first) != ballID) {
+    //     realloc_list.push_back(i->first);
+    //   }
+    // }
+    assert(bucket_data[index].size() > 1);
+    uns64 pos = mtrand->randInt(bucket_data[index].size() - 2);
+    uns64 randomID = bucket_data[index].at(pos);
+    //NAV: The above line picks a random ball ID which does not match the latest inserted ball ID
+    
+    //NAV: Erase the random ball ID from the bucket
+    bucket_data[index].erase(bucket_data[index].begin() + pos);
+     
     uns64 priority = get<1>(set_map[randomID]);  //.at changed
     set_map[randomID] = make_tuple(spill_index, priority);
+    bucket_data[spill_index].push_back(randomID);
 
     //If new spill_index bucket where spilled-ball is to be installed has space, then done.
     if(bucket[spill_index] < SPILL_THRESHOLD){
@@ -152,7 +162,7 @@ void spill_ball(uns64 index, uns64 ballID){
       bucket[spill_index]++;
       //balls[ballID] = spill_index;
       
-    } 
+    }
     else {
       assert(bucket[spill_index] == SPILL_THRESHOLD);
       //if bucket of spill_index is also full, then recursive-spill, we call this a cuckoo-spill
@@ -217,7 +227,10 @@ uns64 insert_ball(uns64 ballID){
 
   // AB: add the new ball to the hash function
   set_map[ballID] = make_tuple(index, 0);
-  
+  cat_0_map[ballID] = 0;
+
+  //NAV: Keeping track of BallID in buckets
+  bucket_data[index].push_back(ballID);
   
   //----------- SPILL --------
   if(SPILL_THRESHOLD && (retval >= SPILL_THRESHOLD)){
@@ -232,9 +245,40 @@ uns64 insert_ball(uns64 ballID){
 }
 
 /////////////////////////////////////////////////////
-// Remove Random Ball (Global Eviction)
+// Remove Random Priority 1 Entry (Global Eviction)
 /////////////////////////////////////////////////////
-void remove_ball(){
+void remove_tag(){
+  auto it = cat_0_map.begin();
+  std::advance(it, rand() % cat_0_map.size());
+  uns64 randomID = it-> first;
+
+  //printf("Random ID generated \n");
+  assert(cat_0_map.find(randomID) != cat_0_map.end());
+  assert(set_map.find(randomID) != set_map.end());
+  
+  // AB: decrementing valid entries for set corresponding to randomID
+  uns64 index = get<0>(set_map[randomID]);
+  //printf("Index is %lld \n", index);
+  assert(bucket[index] != 0 ); 
+  bucket[index]--;
+
+  //NAV: Removing an entry from bucket_data for a particular index
+  for (int i = 0; i < bucket_data[index].size(); i++){
+    if(bucket_data[index][i] == randomID){
+      bucket_data[index].erase(bucket_data[index].begin() + i);
+    }
+  }
+
+  // AB: removing the randomID entry from the data array
+  //printf("Erasing the random ID: %lld \n", randomID);
+  set_map.erase(randomID);
+  cat_0_map.erase(randomID);
+}
+
+/////////////////////////////////////////////////////
+// Remove Random Priority 0 Entry (Global Eviction)
+/////////////////////////////////////////////////////
+void remove_data(){
   // AB: creating a vector containing ballIDs stored in the Data Array
   // vector<uns64>keys_list;
   // for (auto i = set_map.begin(); i != set_map.end(); i++) {
@@ -260,15 +304,22 @@ void remove_ball(){
   
   assert(bucket[index] != 0 ); 
   bucket[index]--;
-  
+  //NAV: Removing an entry from bucket_data for a particular index
+  for (int i = 0; i< bucket_data[index].size(); i++){
+    if(bucket_data[index][i] == randomID){
+      bucket_data[index].erase(bucket_data[index].begin() + i);
+    }
+  }
+
   // AB: removing the randomID entry from the data array
-  printf("Erasing the random ID: %lld \n", randomID);
+  //printf("Erasing the random ID: %lld \n", randomID);
   set_map.erase(randomID);
   cat_1_map.erase(randomID);
 }
 
 void tag_hit(uns64 ballID){
   assert(set_map.find(ballID) != set_map.end());
+  //assert(cat_0_map.find(ballID) != cat_0_map.end());
   uns64 set;
   uns64 priority;
   set = get<0>(set_map[ballID]);
@@ -279,9 +330,10 @@ void tag_hit(uns64 ballID){
   if (priority == 0){
     // AB: changing the priority for the entry to 1
     set_map[ballID] = make_tuple(set, 1);
+    cat_0_map.erase(ballID);
     cat_1_map[ballID] = 1;
     //printf("Remove ball called in tag hit \n");
-    remove_ball();
+    remove_data();
   }  
   else {
       // AB: might need to increment access counter
@@ -290,9 +342,14 @@ void tag_hit(uns64 ballID){
 
 uns64 tag_miss(uns64 ballID){
   assert(set_map.find(ballID) == set_map.end());
+  assert(cat_0_map.find(ballID) == cat_0_map.end());
   uns64 retval = insert_ball(ballID);
   //printf("Remove ball called \n");
-  //remove_ball();
+  // AB: tag array has a lot of Priority 0 tags which need to be randomly evicted
+  // AB: this parameter (262144) will define our steady state of the cache
+  if (cat_0_map.size() > 262144){
+    remove_tag();
+  }
   //printf("Returning retval = %lld \n", retval);
   return retval;
 }
@@ -393,6 +450,7 @@ void sanity_check(void){
   if(cat_1_map.size() != (DATA_SZ)){
      printf("\n*** Sanity Check Failed, TotalCount : %u*****\n", count);
   }
+  assert(cat_1_map.size() == (DATA_SZ));
 }
 
 /////////////////////////////////////////////////////
@@ -412,9 +470,11 @@ void init(void){
   for(ii=0; ii<(TOTAL_BALL_ID); ii+= uns64((TOTAL_BALL_ID/DATA_SZ))){
     //balls[ii] = -1;
     // AB: insert incoming ball into the set_map without evicting random line
-    uns64 ball1 = insert_ball(ii);           
+    uns64 ball1 = insert_ball(ii);       
+    //cat_0_map[ii] = 0;
     // AB: modify the priority of this ball to 1 (with data)
     uns64 set = get<0>(set_map[ii]);
+    cat_0_map.erase(ii);
     cat_1_map[ii] = 1;
     set_map[ii] = make_tuple(set, 1);
 
@@ -462,6 +522,7 @@ void init(void){
 int main(int argc, char* argv[]){
 
   //Get arguments:
+  
   assert((argc == 4) && "Need 3 arguments: (EXTRA_BUCKET_CAPACITY:[0-8] BN_BALL_THROWS:[1-10^5] SEED:[1-400])");
   EXTRA_BUCKET_CAPACITY = atoi(argv[1]);
   SPILL_THRESHOLD = BASE_WAYS_PER_SKEW + EXTRA_BUCKET_CAPACITY;
@@ -474,6 +535,10 @@ int main(int argc, char* argv[]){
   
   uns64 ii;
   mtrand->seed(myseed);
+
+  //NAV: Initializing time variables
+  time_t begin, end;
+  time(&begin);
 
   //Initialize Buckets
   printf("Initializing..... \n");
@@ -506,7 +571,7 @@ int main(int argc, char* argv[]){
   }
   */
   
-  for (uns64 i = 0; i < 500; i++){
+  for (uns64 i = 0; i < 1000; i++){
     for (uns64 ii = 0; ii < 1000; ii++) {
       printf("%lld%lld \n", i, ii);
       throw_ball();
@@ -539,7 +604,28 @@ int main(int argc, char* argv[]){
   printf("\nCuckoo Spill Count: %llu (%5.3f)\n", cuckoo_spill_count,
          100.0* (double)cuckoo_spill_count/(double)((double)NUM_BILLION_TRIES*(double)BILLION_TRIES));
 
+  uns64 priority0 = 0;
+  uns64 priority1 = 0;
+  for (auto i = set_map.begin(); i != set_map.end(); i++) {
+    if (get<1>(i->second) == 1) {
+      priority1++;
+    }
+    else {
+      priority0++;
+    }
+  }
+  
+  //AB: printing the total number of priority 0 and priority 1 entries
+  printf("\nPriority 0 entries: %lld", priority0);
+  printf("\nPriority 1 entries: %lld", priority1);
+  
+  //AB: time for running the program
+  time(&end);
+  time_t elapsed = end - begin;
+  printf("Time Elapsed: %ld seconds \n", elapsed);
+
   return 0;
 }
+
 
 
