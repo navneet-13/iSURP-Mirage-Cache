@@ -1,0 +1,130 @@
+Cache Configuration: 16 MB, 2 skews, 16 ways (8 ways/skew)
+AVG-BALLS-PER-BUCKET:8, BUCKET-SPILL-THRESHOLD:16 
+Simulation Parameters - BALL_THROWS:1000000000, SEED:1
+
+Initializing..... 
+Init Done
+Sanity Check Successful 
+Starting --  (Dot printed every 100M Ball throws) 
+
+
+Bucket-Occupancy Snapshot at End of Experiment
+
+Occupancy: 		 Count
+Bucket[ 0 Fill]: 	 0 	 (0.00)
+Bucket[ 1 Fill]: 	 0 	 (0.00)
+Bucket[ 2 Fill]: 	 0 	 (0.00)
+Bucket[ 3 Fill]: 	 0 	 (0.00)
+Bucket[ 4 Fill]: 	 0 	 (0.00)
+Bucket[ 5 Fill]: 	 9 	 (0.03)
+Bucket[ 6 Fill]: 	 59 	 (0.18)
+Bucket[ 7 Fill]: 	 144 	 (0.44)
+Bucket[ 8 Fill]: 	 489 	 (1.49)
+Bucket[ 9 Fill]: 	 1274 	 (3.89)
+Bucket[10 Fill]: 	 2943 	 (8.98)
+Bucket[11 Fill]: 	 5749 	 (17.54)
+Bucket[12 Fill]: 	 8681 	 (26.49)
+Bucket[13 Fill]: 	 8802 	 (26.86)
+Bucket[14 Fill]: 	 4114 	 (12.55)
+Bucket[15 Fill]: 	 498 	 (1.52)
+Bucket[16 Fill]: 	 6 	 (0.02)
+Bucket[17 Fill]: 	 0 	 (0.00)
+Bucket[18 Fill]: 	 0 	 (0.00)
+Bucket[19 Fill]: 	 0 	 (0.00)
+Bucket[20 Fill]: 	 0 	 (0.00)
+Bucket[21 Fill]: 	 0 	 (0.00)
+Bucket[22 Fill]: 	 0 	 (0.00)
+Bucket[23 Fill]: 	 0 	 (0.00)
+Bucket[24 Fill]: 	 0 	 (0.00)
+Bucket[25 Fill]: 	 0 	 (0.00)
+Bucket[26 Fill]: 	 0 	 (0.00)
+Bucket[27 Fill]: 	 0 	 (0.00)
+Bucket[28 Fill]: 	 0 	 (0.00)
+Bucket[29 Fill]: 	 0 	 (0.00)
+Bucket[30 Fill]: 	 0 	 (0.00)
+Bucket[31 Fill]: 	 0 	 (0.00)
+Bucket[32 Fill]: 	 0 	 (0.00)
+
+
+Distribution of Bucket-Occupancy (Averaged across Ball Throws) => Used for P(Bucket = k balls) calculation 
+
+Occupancy: 		            Count 	 P(Bucket=k balls)
+Bucket[ 0 Fill]: 	               22 	 (0.000)
+Bucket[ 1 Fill]: 	              274 	 (0.000)
+Bucket[ 2 Fill]: 	             1934 	 (0.000)
+Bucket[ 3 Fill]: 	             9470 	 (0.000)
+Bucket[ 4 Fill]: 	            32296 	 (0.002)
+Bucket[ 5 Fill]: 	            60900 	 (0.003)
+Bucket[ 6 Fill]: 	            72353 	 (0.004)
+Bucket[ 7 Fill]: 	            78239 	 (0.004)
+Bucket[ 8 Fill]: 	            87981 	 (0.004)
+Bucket[ 9 Fill]: 	           108156 	 (0.005)
+Bucket[10 Fill]: 	           145457 	 (0.007)
+Bucket[11 Fill]: 	           201800 	 (0.010)
+Bucket[12 Fill]: 	           246722 	 (0.012)
+Bucket[13 Fill]: 	           209124 	 (0.010)
+Bucket[14 Fill]: 	            82673 	 (0.004)
+Bucket[15 Fill]: 	             8304 	 (0.000)
+Bucket[16 Fill]: 	               65 	 (0.000)
+Bucket[17 Fill]: 	                0 	 (0.000)
+Bucket[18 Fill]: 	                0 	 (0.000)
+Bucket[19 Fill]: 	                0 	 (0.000)
+Bucket[20 Fill]: 	                0 	 (0.000)
+Bucket[21 Fill]: 	                0 	 (0.000)
+Bucket[22 Fill]: 	                0 	 (0.000)
+Bucket[23 Fill]: 	                0 	 (0.000)
+Bucket[24 Fill]: 	                0 	 (0.000)
+Bucket[25 Fill]: 	                0 	 (0.000)
+Bucket[26 Fill]: 	                0 	 (0.000)
+Bucket[27 Fill]: 	                0 	 (0.000)
+Bucket[28 Fill]: 	                0 	 (0.000)
+Bucket[29 Fill]: 	                0 	 (0.000)
+Bucket[30 Fill]: 	                0 	 (0.000)
+Bucket[31 Fill]: 	                0 	 (0.000)
+Bucket[32 Fill]: 	                0 	 (0.000)
+
+
+Distribution of Balls-in-Dest-Bucket on Ball-Insertion (Best-Of-2 Indexed-Buckets) => Spill-Count = Spills from Bucket-With-16-Balls
+
+Balls-in-Dest-Bucket (k) 		 Spills from Bucket-With-k-Balls)
+ 0:				               22	 (0.000)
+ 1:				              273	 (0.000)
+ 2:				             1910	 (0.000)
+ 3:				             8741	 (0.001)
+ 4:				            24520	 (0.002)
+ 5:				            35004	 (0.004)
+ 6:				            38226	 (0.004)
+ 7:				            42178	 (0.004)
+ 8:				            50465	 (0.005)
+ 9:				            67594	 (0.007)
+10:				            96885	 (0.010)
+11:				           128745	 (0.013)
+12:				           119918	 (0.012)
+13:				            52421	 (0.005)
+14:				             5922	 (0.001)
+15:				               61	 (0.000)
+16:				                0	 (0.000)
+17:				                0	 (0.000)
+18:				                0	 (0.000)
+19:				                0	 (0.000)
+20:				                0	 (0.000)
+21:				                0	 (0.000)
+22:				                0	 (0.000)
+23:				                0	 (0.000)
+24:				                0	 (0.000)
+25:				                0	 (0.000)
+26:				                0	 (0.000)
+27:				                0	 (0.000)
+28:				                0	 (0.000)
+29:				                0	 (0.000)
+30:				                0	 (0.000)
+31:				                0	 (0.000)
+
+Spill Count: 0 (0.000)
+
+Cuckoo Spill Count: 0 (0.000)
+
+Priority 0 entries: 262142
+Priority 1 entries: 131072
+
+Time Elapsed: 4438 seconds 

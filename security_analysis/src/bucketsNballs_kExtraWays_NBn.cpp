@@ -356,14 +356,14 @@ uns64 tag_miss(uns64 ballID){
 
 void throw_ball(){
   uns64 randID = mtrand->randInt(TOTAL_BALL_ID - 1);
-  printf("\nBall ID: %lld \n", randID);
+  //printf("\nBall ID: %lld \n", randID);
 
   if (set_map.find(randID) != set_map.end()){
-    printf("Tag hit occured \n");
+    //printf("Tag hit occured \n");
     tag_hit(randID);
   }
   else{
-    printf("Tag miss occured \n");
+    //printf("Tag miss occured \n");
     uns64 res = tag_miss(randID);
     if(res <= MAX_FILL){
       stat_counts[res]++;
@@ -573,7 +573,7 @@ int main(int argc, char* argv[]){
   
   for (uns64 i = 0; i < 1000; i++){
     for (uns64 ii = 0; ii < 10000; ii++) {
-      printf("%lld%lld \n", i, ii);
+      //printf("%lld%lld \n", i, ii);
       throw_ball();
     }
   }
@@ -611,7 +611,7 @@ int main(int argc, char* argv[]){
   //AB: time for running the program
   time(&end);
   time_t elapsed = end - begin;
-  printf("Time Elapsed: %ld seconds \n", elapsed);
+  printf("\n\nTime Elapsed: %ld seconds \n", elapsed);
 
   return 0;
 }
